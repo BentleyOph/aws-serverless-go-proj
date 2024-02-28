@@ -19,14 +19,19 @@ func GetUser(req events.APIGatewayProxyRequest, tableName string, dynaClient dyn
 	if len(email) > 0 {
 		result, err := user.GetUser(email, tableName, dynaClient)
 		if err != nil {
-			return ApiResponse(http.StatusBadRequest, ErrorBody{ErrorMessage: aws.String(err.Error())})
+			return ApiResponse(http.StatusBadRequest, ErrorBody{aws.String(err.Error())})
 		}
 		return ApiResponse(http.StatusOK, result)
 	}
-	return ApiResponse(http.StatusBadRequest, ErrorBody{ErrorMessage: aws.String("email is required")})
+	return ApiResponse(http.StatusBadRequest, ErrorBody{aws.String("email is required")})
 }
 
 func GetUsers(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {
+	result, err := user.GetUsers(tableName, dynaClient)
+	if err != nil {
+		return ApiResponse(http.StatusBadRequest, ErrorBody{aws.String(err.Error())})
+	}
+	return ApiResponse(http.StatusOK, result)
 
 }
 func CreateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*events.APIGatewayProxyResponse, error) {

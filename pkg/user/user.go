@@ -32,15 +32,15 @@ var (
 
 // CreateUser is a function that creates a new user in the database.
 func CreateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*User, error) {
-	user := new(User)
-	if err := json.Unmarshal([]byte(req.Body), user); err != nil {
+	var user User
+	if err := json.Unmarshal([]byte(req.Body), &user); err != nil {
 		return nil, errors.New(ErrorInvalidUserData)
 	}
 	if !validators.IsEmail(user.Email) {
 		return nil, errors.New(InvalidEmail)
 	}
-	_, err := GetUser(user.Email, tableName, dynaClient)
-	if err == nil {
+	currentUser, _ := GetUser(user.Email, tableName, dynaClient)
+	if currentUser != nil && len(currentUser.Email) > 0 {
 		return nil, errors.New(UserAlreadyExists)
 	}
 	av, err := dynamodbattribute.MarshalMap(user)
@@ -55,7 +55,7 @@ func CreateUser(req events.APIGatewayProxyRequest, tableName string, dynaClient 
 	if err != nil {
 		return nil, errors.New(CouldNotPut)
 	}
-	return user, nil
+	return &user, nil
 
 }
 
@@ -66,19 +66,19 @@ func GetUsers(tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*[]User, 
 	}
 	result, err := dynaClient.Scan(input) // Get all users
 	if err != nil {
-		return nil, errors.New("Failed to get users")
+		return nil, errors.New("failed to get users")
 	}
 	users := []User{}
 	err = dynamodbattribute.UnmarshalListOfMaps(result.Items, &users)
 	if err != nil {
-		return nil, errors.New("Failed to unmarshal")
+		return nil, errors.New(CouldNotMarshall)
 	}
 	return &users, nil
 
 }
 
 // GetUser is a function that retrieves a user from the database.
-func GetUser(email string, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*dynamodb.GetItemOutput, error) {
+func GetUser(email string, tableName string, dynaClient dynamodbiface.DynamoDBAPI) (*User, error) {
 	input := &dynamodb.GetItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
 			"email": {
@@ -94,7 +94,7 @@ func GetUser(email string, tableName string, dynaClient dynamodbiface.DynamoDBAP
 	item := new(User)
 	err = dynamodbattribute.UnmarshalMap(result.Item, item)
 	if err != nil {
-		return nil, errors.New("Failed to unmarshal")
+		return nil, errors.New("failed to unmarshal")
 	}
 
 	return item, nil
