@@ -4,4 +4,4 @@
 
 
 
- My endpoint is https://u8pgaiegjj.execute-api.eu-north-1.amazonaws.com/staging/
+ 
